@@ -81,6 +81,59 @@ header {
 .stats-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; display: flex; gap: 24px; font-size: 13px; color: var(--text2); }
 .stats-bar strong { color: var(--accent2); font-family: 'Space Grotesk', sans-serif; }
 
+/* ── INDIVIDUAL SELECT LIST ── */
+.select-list-container {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease-out;
+  background: var(--surface);
+  border-radius: 10px;
+}
+.select-list-container.open {
+  max-height: 360px; /* ボタンが追加されたので少し高さを広げます */
+  border: 1px solid var(--border);
+  overflow-y: auto;
+}
+.select-list {
+  display: flex;
+  flex-direction: column;
+}
+/* 修正：ラベル要素にして、行全体をコンテナ化します */
+.select-q-label {
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  align-items: center; /* 中央揃えに */
+  line-height: 1.5;
+}
+.select-q-label:last-child {
+  border-bottom: none;
+}
+.select-q-label:hover {
+  background: var(--surface2);
+  color: var(--accent2);
+}
+/* チェックボックス自体のデザイン調整 */
+.select-q-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.select-q-label .q-idx {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  color: var(--text3);
+  min-width: 28px;
+}
+
 /* ── BUTTONS ── */
 .btn { padding: 14px 28px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
 .btn-primary { background: var(--accent); color: #fff; }

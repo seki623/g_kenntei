@@ -26,12 +26,104 @@ const UI = {
 
     const defaultN = Math.min(10, total);
     this.selectCount(defaultN, grid.querySelector(`[data-val="${defaultN}"]`) || grid.firstChild);
-  },
 
+    // 問題一覧リストの生成
+    this.renderIndividualQList();
+  },
+  // 追加：入力された範囲に基づいてチェックボックスを一括操作する
+  selectRange() {
+    const startInput = document.getElementById('rangeStart').value;
+    const endInput = document.getElementById('rangeEnd').value;
+    
+    const start = parseInt(startInput);
+    const end = parseInt(endInput);
+    
+    if (isNaN(start) || isNaN(end)) {
+      alert('開始番号と終了番号を両方入力してください。');
+      return;
+    }
+    
+    if (start > end) {
+      alert('開始番号は終了番号以下の数値を入力してください。');
+      return;
+    }
+
+    const checkboxes = document.querySelectorAll('.q-select-checkbox');
+    
+    checkboxes.forEach(box => {
+      // 画面上の表示番号（#1, #2...）に合わせるため +1 で判定します
+      const currentIdx = parseInt(box.value) + 1;
+      
+      if (currentIdx >= start && currentIdx <= end) {
+        box.checked = true;
+      } else {
+        box.checked = false; // 範囲外のチェックは外す（お好みで維持させたい場合はこの行を削除）
+      }
+    });
+
+    this.updateSelectedCountBadge();
+  },
   selectCount(n, btn) {
     selectedCount = n;
     document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('selected'));
     if (btn) btn.classList.add('selected');
+  },
+
+  // 問題一覧のアコーディオン開閉
+  toggleQuestionList() {
+    const container = document.getElementById('selectListContainer');
+    const arrow = document.getElementById('listArrow');
+    container.classList.toggle('open');
+    if (container.classList.contains('open')) {
+      arrow.textContent = '▲';
+    } else {
+      arrow.textContent = '▼';
+    }
+  },
+
+  // 問題一覧を生成（複数選択のチェックボックス形式）
+  renderIndividualQList() {
+    const listArea = document.getElementById('individualQList');
+    listArea.innerHTML = '';
+    
+    allQuestions.forEach((q, idx) => {
+      const label = document.createElement('label');
+      label.className = 'select-q-label';
+      
+      const qShort = q.question.length > 45 ? q.question.slice(0, 45) + '…' : q.question;
+      
+      label.innerHTML = `
+        <input type="checkbox" class="q-select-checkbox" value="${idx}" onchange="UI.updateSelectedCountBadge()">
+        <span class="q-idx">#${idx + 1}</span>
+        <span>${qShort}</span>
+      `;
+      listArea.appendChild(label);
+    });
+
+    this.updateSelectedCountBadge();
+  },
+
+  // 選択されている問題数をバッジに反映
+  updateSelectedCountBadge() {
+    const checkedBoxes = document.querySelectorAll('.q-select-checkbox:checked');
+    document.getElementById('selectedCountBadge').textContent = checkedBoxes.length;
+  },
+
+  // チェックされた複数の問題を集めて開始する
+  startSelectedQuestions() {
+    const checkedBoxes = document.querySelectorAll('.q-select-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+      alert('問題が選択されていません。解きたい問題にチェックを入れてください。');
+      return;
+    }
+
+    const doShuffleC = document.getElementById('shuffleC').checked;
+    isTimerActive = document.getElementById('useTimer').checked;
+
+    // チェックされたインデックスの問題だけを集めて出題配列を作る
+    sessionQ = Array.from(checkedBoxes).map(box => allQuestions[parseInt(box.value)]);
+    
+    this.setupSession(doShuffleC);
   },
 
   // ─── GAME START ──────────────────────────────────────────
@@ -160,15 +252,14 @@ const UI = {
   abortQuiz() {
     if (confirm('クイズを途中で終了して結果画面へ進みますか？')) {
       stopTimer();
-      this.showResult(true); // 中断フラグを渡す
+      this.showResult(true);
     }
   },
 
   // ─── RESULT SCREEN ───────────────────────────────────────
   showResult(isAborted = false) {
-    // 途中終了の場合は、実際に解いた（回答が存在する）問題数のみを分母にする
     const answeredCount = isAborted ? answers.filter(a => a !== null).length : sessionQ.length;
-    const total = answeredCount === 0 ? 1 : answeredCount; // 0除算対策
+    const total = answeredCount === 0 ? 1 : answeredCount;
     const wrong = answeredCount - score;
     const pct = Math.round((score / total) * 100);
 
@@ -190,7 +281,9 @@ const UI = {
     if (isAborted) title += '（途中終了）';
     document.getElementById('resultTitle').textContent = title;
 
-    // 間違えた問題があるか確認し、ボタンの有効・無効化
+    // 1問だけ解いた場合は「同じ設定で再挑戦」を非表示にする（バグ防止）
+    document.getElementById('retrySameBtn').style.display = sessionQ.length === 1 ? 'none' : '';
+
     const hasWrong = sessionQ.some((q, i) => !answers[i] || answers[i].origChosen !== q.correct);
     document.getElementById('retryWrongBtn').style.display = hasWrong ? '' : 'none';
 
@@ -198,7 +291,7 @@ const UI = {
     container.innerHTML = '';
     sessionQ.forEach((q, i) => {
       const a = answers[i];
-      if (isAborted && !a) return; // 途中終了で未回答の問題はレビューに出さない
+      if (isAborted && !a) return;
 
       const ok = a && (a.origChosen === q.correct);
       const div = document.createElement('div');
@@ -214,7 +307,6 @@ const UI = {
 
   // ─── RETRY OPTIONS ───────────────────────────────────────
   restartWrongOnly() {
-    // 間違えた問題、または未回答の問題だけを抽出
     const wrongPool = sessionQ.filter((q, i) => !answers[i] || answers[i].origChosen !== q.correct);
     if (wrongPool.length === 0) return;
 
@@ -235,6 +327,7 @@ const UI = {
 
   goSetup() {
     stopTimer();
+    this.initSetup();
     this.showScreen('setupScreen');
   },
 

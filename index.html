@@ -77,6 +77,32 @@
       </div>
     </div>
 
+    <div class="setup-section">
+      <div class="setup-label">個別問題選択</div>
+      <button class="btn btn-ghost" id="toggleListBtn" onclick="UI.toggleQuestionList()" style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center;">
+        <span>問題一覧から選んで解く</span>
+        <span id="listArrow">▼</span>
+      </button>
+      
+      <div class="select-list-container" id="selectListContainer">
+        <div style="padding: 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--border); background: var(--surface2); font-size: 13px;">
+          <input type="number" id="rangeStart" placeholder="開始" style="width: 60px; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: #fff; text-align: center;">
+          <span>問目 から</span>
+          <input type="number" id="rangeEnd" placeholder="終了" style="width: 60px; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: #fff; text-align: center;">
+          <span>問目 まで</span>
+          <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; margin-left: auto;" onclick="UI.selectRange()">選択</button>
+        </div>
+
+        <div class="select-list" id="individualQList"></div>
+        <div style="padding: 12px; border-top: 1px solid var(--border); background: var(--surface2);">
+          <button class="btn btn-primary" style="width: 100%; padding: 10px;" onclick="UI.startSelectedQuestions()">
+            選択した問題を解く (計<span id="selectedCountBadge">0</span>問)
+          </button>
+        </div>
+      </div>
+    </div>
+    </div>
+
     <button class="btn btn-primary" id="startBtn" onclick="UI.startQuiz()">クイズを開始する →</button>
   </div>
 
@@ -125,13 +151,13 @@
     </div>
 
     <div class="result-btns">
-      <button class="btn btn-primary" onclick="UI.restartSameSettings()">同じ設定で再挑戦</button>
+      <button class="btn btn-primary" id="retrySameBtn" onclick="UI.restartSameSettings()">同じ設定で再挑戦</button>
       <button class="btn btn-accent" id="retryWrongBtn" onclick="UI.restartWrongOnly()">間違えた問題に再挑戦</button>
       <button class="btn btn-ghost" onclick="UI.goSetup()">設定に戻る</button>
     </div>
   </div>
 
-<script src="app.js"></script>
-<script src="ui.js"></script>
+  <script src="app.js"></script>
+  <script src="ui.js"></script>
 </body>
 </html>
