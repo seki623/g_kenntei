@@ -1,808 +1,137 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>4択クイズ</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap');
-
-:root {
-  --bg: #0f1117;
-  --surface: #1a1d27;
-  --surface2: #222636;
-  --border: #2e3347;
-  --accent: #6c63ff;
-  --accent2: #a78bfa;
-  --correct: #22c55e;
-  --wrong: #ef4444;
-  --warn: #f59e0b;
-  --text: #e8eaf0;
-  --text2: #8b8fa8;
-  --text3: #5a5e75;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'Noto Sans JP', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-header {
-  width: 100%;
-  padding: 18px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-}
-.logo {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--accent2);
-}
-.logo span { color: var(--text2); font-weight: 500; }
-
-.header-info {
-  font-size: 12px;
-  color: var(--text3);
-}
-
-/* ── SCREENS ── */
-.screen { display: none; width: 100%; max-width: 720px; padding: 40px 24px; }
-.screen.active { display: flex; flex-direction: column; gap: 20px; }
-
-/* ── SETUP SCREEN ── */
-.setup-title {
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-.setup-title small {
-  display: block;
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--text2);
-  margin-top: 6px;
-}
-
-.setup-section { display: flex; flex-direction: column; gap: 10px; }
-.setup-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text2);
-  letter-spacing: .8px;
-  text-transform: uppercase;
-}
-
-.count-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-.count-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text2);
-  padding: 12px 8px;
-  font-size: 13px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all .15s;
-  text-align: center;
-}
-.count-btn:hover:not(.disabled) {
-  border-color: var(--accent2);
-  color: var(--text);
-}
-.count-btn.selected {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-.count-btn.disabled {
-  opacity: .35;
-  cursor: not-allowed;
-}
-.count-btn .sub {
-  display: block;
-  font-size: 10px;
-  font-family: 'Noto Sans JP', sans-serif;
-  font-weight: 400;
-  color: var(--text3);
-  margin-top: 2px;
-}
-.count-btn.selected .sub { color: rgba(255,255,255,.6); }
-
-.toggle-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.toggle-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 16px;
-}
-.toggle-label { font-size: 14px; }
-.toggle-label small { display: block; font-size: 11px; color: var(--text2); margin-top: 2px; }
-
-.toggle-switch {
-  position: relative;
-  width: 44px;
-  height: 24px;
-  flex-shrink: 0;
-}
-.toggle-switch input { display: none; }
-.toggle-track {
-  position: absolute;
-  inset: 0;
-  background: var(--border);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background .2s;
-}
-.toggle-switch input:checked + .toggle-track { background: var(--accent); }
-.toggle-track::after {
-  content: '';
-  position: absolute;
-  top: 3px; left: 3px;
-  width: 18px; height: 18px;
-  background: #fff;
-  border-radius: 50%;
-  transition: transform .2s;
-}
-.toggle-switch input:checked + .toggle-track::after { transform: translateX(20px); }
-
-.stats-bar {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 18px;
-  display: flex;
-  gap: 24px;
-  font-size: 13px;
-  color: var(--text2);
-}
-.stats-bar strong { color: var(--accent2); font-family: 'Space Grotesk', sans-serif; }
-
-/* ── BUTTONS ── */
-.btn {
-  padding: 14px 28px;
-  border-radius: 10px;
-  border: none;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: 'Noto Sans JP', sans-serif;
-  transition: all .15s;
-}
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-primary:hover { background: #5b52e8; transform: translateY(-1px); }
-.btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
-.btn-ghost {
-  background: var(--surface2);
-  color: var(--text2);
-  border: 1px solid var(--border);
-}
-.btn-ghost:hover { color: var(--text); border-color: var(--accent2); }
-
-/* ── QUIZ SCREEN ── */
-.quiz-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.q-counter {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 13px;
-  color: var(--text2);
-  white-space: nowrap;
-}
-.q-counter strong { color: var(--text); font-size: 16px; }
-
-.timer {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: 1px;
-  min-width: 64px;
-  text-align: right;
-}
-.timer.warn { color: var(--warn); }
-
-.progress-bar {
-  width: 100%;
-  height: 3px;
-  background: var(--border);
-  border-radius: 2px;
-  overflow: hidden;
-}
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
-  border-radius: 2px;
-  transition: width .4s ease;
-}
-
-.correct-track {
-  font-size: 12px;
-  color: var(--text3);
-  text-align: right;
-}
-
-.question-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 24px 22px;
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.75;
-}
-
-.choices { display: flex; flex-direction: column; gap: 8px; }
-
-.choice-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 13px 18px;
-  color: var(--text);
-  font-size: 14px;
-  font-family: 'Noto Sans JP', sans-serif;
-  text-align: left;
-  cursor: pointer;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  transition: all .15s;
-  line-height: 1.6;
-  width: 100%;
-}
-.choice-btn:hover:not(:disabled) {
-  border-color: var(--accent2);
-  background: var(--surface2);
-}
-.choice-btn .c-num {
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
-  color: var(--text3);
-  min-width: 18px;
-  font-size: 14px;
-  padding-top: 1px;
-}
-.choice-btn.correct { border-color: var(--correct); background: #0d2a1a; }
-.choice-btn.correct .c-num { color: var(--correct); }
-.choice-btn.wrong { border-color: var(--wrong); background: #2a0e0e; }
-.choice-btn.wrong .c-num { color: var(--wrong); }
-.choice-btn:disabled { cursor: default; }
-
-.explanation {
-  background: var(--surface2);
-  border-left: 3px solid var(--accent2);
-  border-radius: 0 10px 10px 0;
-  padding: 16px 18px;
-  font-size: 13px;
-  line-height: 1.8;
-  color: #c4c8e0;
-  display: none;
-}
-.explanation .ex-tag {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--accent2);
-  letter-spacing: .5px;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}
-.explanation.show { display: block; }
-
-.nav-row { display: flex; gap: 10px; }
-
-/* ── RESULT SCREEN ── */
-.result-hero {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 36px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  text-align: center;
-}
-.score-ring {
-  width: 110px; height: 110px;
-  border-radius: 50%;
-  border: 3px solid var(--accent);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  background: var(--surface2);
-}
-.score-big {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 34px;
-  font-weight: 700;
-  color: var(--accent2);
-  line-height: 1;
-}
-.score-of { font-size: 11px; color: var(--text2); margin-top: 2px; }
-.result-title { font-size: 20px; font-weight: 700; }
-.result-elapsed { font-size: 13px; color: var(--text2); }
-
-.result-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-.stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 12px;
-  text-align: center;
-}
-.stat-card .sv {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--accent2);
-}
-.stat-card .sl { font-size: 11px; color: var(--text2); margin-top: 3px; }
-
-.review-list { display: flex; flex-direction: column; gap: 7px; }
-.review-head { font-size: 12px; font-weight: 700; color: var(--text2); letter-spacing: .5px; text-transform: uppercase; }
-.review-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  background: var(--surface);
-  border-radius: 10px;
-  padding: 11px 14px;
-  font-size: 13px;
-}
-.ri-ico { min-width: 18px; font-size: 15px; }
-.ri-body { color: var(--text2); line-height: 1.5; }
-.ri-body strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 13px; }
-
-.result-btns { display: flex; gap: 10px; flex-wrap: wrap; }
-
-/* ── LOADING ── */
-#loadingMsg {
-  margin-top: 80px;
-  text-align: center;
-  color: var(--text2);
-  font-size: 14px;
-}
-.spinner {
-  width: 36px; height: 36px;
-  border: 3px solid var(--border);
-  border-top-color: var(--accent2);
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-  margin: 0 auto 16px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-@media (max-width: 520px) {
-  .count-grid { grid-template-columns: repeat(4, 1fr); }
-  .screen { padding: 24px 14px; }
-  .question-box { font-size: 14px; }
-  .result-stats { grid-template-columns: repeat(3, 1fr); }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4択クイズ</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header>
-  <div class="logo">Quiz<span>Gen</span></div>
-  <div class="header-info" id="headerInfo"></div>
-</header>
+  <header>
+    <div class="logo">Quiz<span>Gen</span></div>
+    <div class="header-info" id="headerInfo"></div>
+  </header>
 
-<!-- LOADING -->
-<div id="loadingMsg">
-  <div class="spinner"></div>
-  問題を読み込み中…
-</div>
-
-<!-- ① SETUP -->
-<div id="setupScreen" class="screen">
-  <div class="setup-title">
-    クイズの設定
-    <small id="totalBadge"></small>
+  <div id="loadingMsg">
+    <div class="spinner"></div>
+    問題を読み込み中…
   </div>
 
-  <div class="stats-bar" id="statsBadge"></div>
+  <div id="setupScreen" class="screen">
+    <div class="setup-title">
+      クイズの設定
+      <small id="totalBadge"></small>
+    </div>
 
-  <div class="setup-section">
-    <div class="setup-label">問題数</div>
-    <div class="count-grid" id="countGrid"></div>
+    <div class="stats-bar" id="statsBadge"></div>
+
+    <div class="setup-section">
+      <div class="setup-label">問題数</div>
+      <div class="count-grid" id="countGrid"></div>
+    </div>
+
+    <div class="setup-section">
+      <div class="setup-label">オプション</div>
+      <div class="toggle-row">
+        <label class="toggle-item">
+          <div class="toggle-label">
+            制限時間を計測する
+            <small>タイマーによる時間計測を行います</small>
+          </div>
+          <div class="toggle-switch">
+            <input type="checkbox" id="useTimer" checked>
+            <div class="toggle-track"></div>
+          </div>
+        </label>
+        <label class="toggle-item">
+          <div class="toggle-label">
+            問題をシャッフル
+            <small>出題順をランダムにする</small>
+          </div>
+          <div class="toggle-switch">
+            <input type="checkbox" id="shuffleQ" checked>
+            <div class="toggle-track"></div>
+          </div>
+        </label>
+        <label class="toggle-item">
+          <div class="toggle-label">
+            選択肢をシャッフル
+            <small>①②③④の順をランダムにする</small>
+          </div>
+          <div class="toggle-switch">
+            <input type="checkbox" id="shuffleC" checked>
+            <div class="toggle-track"></div>
+          </div>
+        </label>
+        <label class="toggle-item">
+          <div class="toggle-label">
+            解説を表示する
+            <small>回答後に解説を表示する</small>
+          </div>
+          <div class="toggle-switch">
+            <input type="checkbox" id="showExp" checked>
+            <div class="toggle-track"></div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="startBtn" onclick="UI.startQuiz()">クイズを開始する →</button>
   </div>
 
-  <div class="setup-section">
-    <div class="setup-label">オプション</div>
-    <div class="toggle-row">
-      <label class="toggle-item">
-        <div class="toggle-label">
-          問題をシャッフル
-          <small>出題順をランダムにする</small>
-        </div>
-        <div class="toggle-switch">
-          <input type="checkbox" id="shuffleQ" checked>
-          <div class="toggle-track"></div>
-        </div>
-      </label>
-      <label class="toggle-item">
-        <div class="toggle-label">
-          選択肢をシャッフル
-          <small>①②③④の順をランダムにする</small>
-        </div>
-        <div class="toggle-switch">
-          <input type="checkbox" id="shuffleC" checked>
-          <div class="toggle-track"></div>
-        </div>
-      </label>
-      <label class="toggle-item">
-        <div class="toggle-label">
-          解説を表示する
-          <small>回答後に解説を表示する</small>
-        </div>
-        <div class="toggle-switch">
-          <input type="checkbox" id="showExp" checked>
-          <div class="toggle-track"></div>
-        </div>
-      </label>
+  <div id="quizScreen" class="screen">
+    <div class="quiz-topbar">
+      <div class="q-counter">問題 <strong id="qNum">1</strong> / <span id="qTotal">10</span></div>
+      <div class="timer" id="timerEl">0:00</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="correct-track" id="correctTrack"></div>
+
+    <div class="question-box" id="questionText"></div>
+    <div class="choices" id="choicesArea"></div>
+
+    <div class="explanation" id="explanation">
+      <div class="ex-tag">解説</div>
+      <div id="explanationText"></div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-ghost" id="backBtn" onclick="UI.goBack()">← 前へ</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="UI.goNext()" style="display:none">次へ →</button>
+      <button class="btn btn-warn" id="abortBtn" onclick="UI.abortQuiz()" style="margin-left: auto;">途中終了</button>
     </div>
   </div>
 
-  <button class="btn btn-primary" id="startBtn" onclick="startQuiz()">クイズを開始する →</button>
-</div>
-
-<!-- ② QUIZ -->
-<div id="quizScreen" class="screen">
-  <div class="quiz-topbar">
-    <div class="q-counter">問題 <strong id="qNum">1</strong> / <span id="qTotal">10</span></div>
-    <div class="timer" id="timerEl">0:00</div>
-  </div>
-  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-  <div class="correct-track" id="correctTrack"></div>
-
-  <div class="question-box" id="questionText"></div>
-  <div class="choices" id="choicesArea"></div>
-
-  <div class="explanation" id="explanation">
-    <div class="ex-tag">解説</div>
-    <div id="explanationText"></div>
-  </div>
-
-  <div class="nav-row">
-    <button class="btn btn-ghost" id="backBtn" onclick="goBack()">← 前へ</button>
-    <button class="btn btn-primary" id="nextBtn" onclick="goNext()" style="display:none">次へ →</button>
-  </div>
-</div>
-
-<!-- ③ RESULT -->
-<div id="resultScreen" class="screen">
-  <div class="result-hero">
-    <div class="score-ring">
-      <div class="score-big" id="finalScore"></div>
-      <div class="score-of">正解</div>
+  <div id="resultScreen" class="screen">
+    <div class="result-hero">
+      <div class="score-ring">
+        <div class="score-big" id="finalScore"></div>
+        <div class="score-of">正解</div>
+      </div>
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-elapsed" id="resultElapsed"></div>
     </div>
-    <div class="result-title" id="resultTitle"></div>
-    <div class="result-elapsed" id="resultElapsed"></div>
+
+    <div class="result-stats">
+      <div class="stat-card"><div class="sv" id="statCorrect"></div><div class="sl">正解</div></div>
+      <div class="stat-card"><div class="sv" id="statWrong"></div><div class="sl">不正解</div></div>
+      <div class="stat-card"><div class="sv" id="statPct"></div><div class="sl">正答率</div></div>
+    </div>
+
+    <div class="review-list">
+      <div class="review-head">問題別結果</div>
+      <div id="reviewItems"></div>
+    </div>
+
+    <div class="result-btns">
+      <button class="btn btn-primary" onclick="UI.restartSameSettings()">同じ設定で再挑戦</button>
+      <button class="btn btn-accent" id="retryWrongBtn" onclick="UI.restartWrongOnly()">間違えた問題に再挑戦</button>
+      <button class="btn btn-ghost" onclick="UI.goSetup()">設定に戻る</button>
+    </div>
   </div>
 
-  <div class="result-stats">
-    <div class="stat-card"><div class="sv" id="statCorrect"></div><div class="sl">正解</div></div>
-    <div class="stat-card"><div class="sv" id="statWrong"></div><div class="sl">不正解</div></div>
-    <div class="stat-card"><div class="sv" id="statPct"></div><div class="sl">正答率</div></div>
-  </div>
-
-  <div class="review-list">
-    <div class="review-head">問題別結果</div>
-    <div id="reviewItems"></div>
-  </div>
-
-  <div class="result-btns">
-    <button class="btn btn-primary" onclick="restartSameSettings()">同じ設定で再挑戦</button>
-    <button class="btn btn-ghost" onclick="goSetup()">設定に戻る</button>
-  </div>
-</div>
-
-<script>
-// ─── CONFIG ──────────────────────────────────────────────
-const COUNT_OPTIONS = [10, 30, 50, 100, 200, 300, 400, 500];
-const NUMS = ['①','②','③','④'];
-
-// ─── STATE ───────────────────────────────────────────────
-let allQuestions = [];
-let sessionQ = [];       // 今回出題する問題（シャッフル済み）
-let choiceMap = [];      // 各問題の選択肢インデックスマッピング [{dispIdx: origIdx}]
-let current = 0;
-let answers = [];        // null or {chosen, correct}
-let score = 0;
-let selectedCount = 10;
-let timerSec = 0;
-let timerInterval = null;
-let startTime = null;
-
-// ─── LOAD ────────────────────────────────────────────────
-async function loadQuestions() {
-  try {
-    const res = await fetch('questions.json');
-    if (!res.ok) throw new Error('fetch failed');
-    allQuestions = await res.json();
-    document.getElementById('loadingMsg').style.display = 'none';
-    initSetup();
-    showScreen('setupScreen');
-  } catch(e) {
-    document.getElementById('loadingMsg').innerHTML =
-      '<div style="color:#ef4444">問題ファイルの読み込みに失敗しました。<br>questions.json が同じフォルダにあるか確認してください。</div>';
-  }
-}
-
-// ─── SETUP ───────────────────────────────────────────────
-function initSetup() {
-  const total = allQuestions.length;
-  document.getElementById('totalBadge').textContent = `全 ${total} 問のデータベースから出題`;
-  document.getElementById('statsBadge').innerHTML =
-    `<span>総問題数: <strong>${total}</strong></span>`;
-  document.getElementById('headerInfo').textContent = `${total} 問`;
-
-  const grid = document.getElementById('countGrid');
-  grid.innerHTML = '';
-  COUNT_OPTIONS.forEach(n => {
-    const btn = document.createElement('button');
-    btn.className = 'count-btn';
-    const isOver = n > total;
-    if (isOver) {
-      btn.className += ' disabled';
-      btn.innerHTML = `${n}<span class="sub">全問 (${total})</span>`;
-      btn.onclick = () => selectCount(total, btn);
-    } else {
-      btn.innerHTML = `${n}<span class="sub">問</span>`;
-      btn.onclick = () => selectCount(n, btn);
-    }
-    btn.dataset.val = isOver ? total : n;
-    grid.appendChild(btn);
-  });
-
-  // デフォルト選択
-  const defaultN = Math.min(10, total);
-  selectCount(defaultN, grid.querySelector(`[data-val="${defaultN}"]`) || grid.firstChild);
-}
-
-function selectCount(n, btn) {
-  selectedCount = n;
-  document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('selected'));
-  if (btn) btn.classList.add('selected');
-}
-
-// ─── START ───────────────────────────────────────────────
-function startQuiz() {
-  const doShuffleQ = document.getElementById('shuffleQ').checked;
-  const doShuffleC = document.getElementById('shuffleC').checked;
-
-  // 問題を選ぶ
-  let pool = [...allQuestions];
-  if (doShuffleQ) pool = shuffle(pool);
-  sessionQ = pool.slice(0, selectedCount);
-
-  // 選択肢マッピング生成
-  choiceMap = sessionQ.map(q => {
-    const idxs = [0,1,2,3];
-    if (doShuffleC) shuffleArr(idxs);
-    return idxs; // display position i → original index idxs[i]
-  });
-
-  current = 0;
-  answers = new Array(sessionQ.length).fill(null);
-  score = 0;
-  timerSec = 0;
-
-  showScreen('quizScreen');
-  document.getElementById('qTotal').textContent = sessionQ.length;
-  startTimer();
-  renderQuestion();
-}
-
-// ─── TIMER ───────────────────────────────────────────────
-function startTimer() {
-  clearInterval(timerInterval);
-  startTime = Date.now();
-  timerInterval = setInterval(() => {
-    timerSec = Math.floor((Date.now() - startTime) / 1000);
-    updateTimerEl();
-  }, 1000);
-}
-
-function stopTimer() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-}
-
-function updateTimerEl() {
-  const el = document.getElementById('timerEl');
-  const m = Math.floor(timerSec / 60);
-  const s = timerSec % 60;
-  el.textContent = `${m}:${String(s).padStart(2,'0')}`;
-  el.className = 'timer' + (timerSec >= 3600 ? ' warn' : '');
-}
-
-function formatTime(sec) {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  if (m === 0) return `${s}秒`;
-  return `${m}分${s}秒`;
-}
-
-// ─── RENDER ──────────────────────────────────────────────
-function renderQuestion() {
-  const q = sessionQ[current];
-  const map = choiceMap[current];
-  const total = sessionQ.length;
-
-  document.getElementById('qNum').textContent = current + 1;
-  document.getElementById('progressFill').style.width = `${(current / total) * 100}%`;
-  document.getElementById('correctTrack').textContent = `正答: ${score} / ${current}`;
-
-  document.getElementById('questionText').textContent = q.question;
-
-  const area = document.getElementById('choicesArea');
-  area.innerHTML = '';
-  map.forEach((origIdx, dispPos) => {
-    const btn = document.createElement('button');
-    btn.className = 'choice-btn';
-    btn.innerHTML = `<span class="c-num">${NUMS[dispPos]}</span><span>${q.choices[origIdx]}</span>`;
-    btn.onclick = () => selectAnswer(dispPos);
-    area.appendChild(btn);
-  });
-
-  // 解説リセット
-  document.getElementById('explanation').classList.remove('show');
-  document.getElementById('nextBtn').style.display = 'none';
-  document.getElementById('backBtn').style.display = current === 0 ? 'none' : '';
-
-  // 既回答復元
-  const prev = answers[current];
-  if (prev !== null) {
-    applyAnswerState(prev.chosenDisp, prev.correctDisp, q.explanation, false);
-  }
-}
-
-function selectAnswer(dispPos) {
-  if (answers[current] !== null) return;
-  const q = sessionQ[current];
-  const map = choiceMap[current];
-  const origChosen = map[dispPos];
-  const correctDisp = map.indexOf(q.correct);
-
-  const isCorrect = (origChosen === q.correct);
-  if (isCorrect) score++;
-  answers[current] = { chosenDisp: dispPos, correctDisp, origChosen };
-
-  applyAnswerState(dispPos, correctDisp, q.explanation, true);
-  document.getElementById('correctTrack').textContent = `正答: ${score} / ${current + 1}`;
-}
-
-function applyAnswerState(chosenDisp, correctDisp, explanation, animate) {
-  const btns = document.querySelectorAll('.choice-btn');
-  btns.forEach((btn, i) => {
-    btn.disabled = true;
-    if (i === correctDisp) btn.classList.add('correct');
-    if (i === chosenDisp && chosenDisp !== correctDisp) btn.classList.add('wrong');
-  });
-
-  const showExp = document.getElementById('showExp').checked;
-  if (showExp && explanation) {
-    document.getElementById('explanationText').textContent = explanation;
-    document.getElementById('explanation').classList.add('show');
-  }
-
-  const isLast = current === sessionQ.length - 1;
-  const nextBtn = document.getElementById('nextBtn');
-  nextBtn.style.display = '';
-  nextBtn.textContent = isLast ? '結果を見る' : '次へ →';
-}
-
-function goNext() {
-  if (current < sessionQ.length - 1) {
-    current++;
-    renderQuestion();
-  } else {
-    stopTimer();
-    showResult();
-  }
-}
-
-function goBack() {
-  if (current > 0) {
-    const prev = answers[current - 1];
-    // スコア調整（戻るときは再回答させない設計のため不要だが安全のため）
-    current--;
-    renderQuestion();
-  }
-}
-
-// ─── RESULT ──────────────────────────────────────────────
-function showResult() {
-  const total = sessionQ.length;
-  const wrong = total - score;
-  const pct = Math.round((score / total) * 100);
-
-  document.getElementById('finalScore').textContent = `${score}/${total}`;
-  document.getElementById('statCorrect').textContent = score;
-  document.getElementById('statWrong').textContent = wrong;
-  document.getElementById('statPct').textContent = `${pct}%`;
-  document.getElementById('resultElapsed').textContent = `所要時間: ${formatTime(timerSec)}`;
-
-  let title;
-  if (pct === 100) title = '🎉 パーフェクト！';
-  else if (pct >= 80) title = '🌟 優秀！';
-  else if (pct >= 60) title = '👍 合格ライン';
-  else title = '📚 要復習';
-  document.getElementById('resultTitle').textContent = title;
-
-  const container = document.getElementById('reviewItems');
-  container.innerHTML = '';
-  sessionQ.forEach((q, i) => {
-    const a = answers[i];
-    const ok = a && (a.origChosen === q.correct);
-    const div = document.createElement('div');
-    div.className = 'review-item';
-    const qShort = q.question.length > 45 ? q.question.slice(0,45)+'…' : q.question;
-    let detail = ok ? '<span style="color:#22c55e">正解</span>' :
-      (a ? `正解: ${NUMS[a.correctDisp]} ${q.choices[q.correct]}` : '未回答');
-    div.innerHTML = `<div class="ri-ico">${ok ? '✅' : '❌'}</div><div class="ri-body"><strong>Q${i+1}. ${qShort}</strong>${detail}</div>`;
-    container.appendChild(div);
-  });
-
-  showScreen('resultScreen');
-}
-
-// ─── NAV ─────────────────────────────────────────────────
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-function goSetup() {
-  stopTimer();
-  showScreen('setupScreen');
-}
-
-function restartSameSettings() {
-  startQuiz();
-}
-
-// ─── UTILS ───────────────────────────────────────────────
-function shuffle(arr) { return shuffleArr([...arr]); }
-function shuffleArr(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-// ─── INIT ────────────────────────────────────────────────
-loadQuestions();
-</script>
+<script src="app.js"></script>
+<script src="ui.js"></script>
 </body>
 </html>
