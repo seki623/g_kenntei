@@ -1,6 +1,6 @@
 // ─── DATA & CONFIG ───────────────────────────────────────
 // 読み込みたいJSONファイルをここにすべて列挙します
-const QUESTION_FILES = ['questions.json', 'questions2.json']; 
+const QUESTION_FILES = ['questions.json', 'questions2.json', 'questions3.json']; 
 const COUNT_OPTIONS = [10, 30, 50, 100, 200, 300, 400, 500];
 const NUMS = ['①','②','③','④'];
 
