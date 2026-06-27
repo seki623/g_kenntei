@@ -1,5 +1,17 @@
 const UI = {
   // ─── SETUP SCREEN ───────────────────────────────────────
+  // 選択肢シャッフルの切り替え時に解説のデフォルト状態を連動させる
+  handleShuffleCChange() {
+    const shuffleC = document.getElementById('shuffleC').checked;
+    const showExpInput = document.getElementById('showExp');
+    
+    if (shuffleC) {
+      showExpInput.checked = false;
+    } else {
+      showExpInput.checked = true;
+    }
+  },
+
   initSetup() {
     const total = allQuestions.length;
     document.getElementById('totalBadge').textContent = `全 ${total} 問のデータベースから出題`;
@@ -30,39 +42,7 @@ const UI = {
     // 問題一覧リストの生成
     this.renderIndividualQList();
   },
-  // 追加：入力された範囲に基づいてチェックボックスを一括操作する
-  selectRange() {
-    const startInput = document.getElementById('rangeStart').value;
-    const endInput = document.getElementById('rangeEnd').value;
-    
-    const start = parseInt(startInput);
-    const end = parseInt(endInput);
-    
-    if (isNaN(start) || isNaN(end)) {
-      alert('開始番号と終了番号を両方入力してください。');
-      return;
-    }
-    
-    if (start > end) {
-      alert('開始番号は終了番号以下の数値を入力してください。');
-      return;
-    }
 
-    const checkboxes = document.querySelectorAll('.q-select-checkbox');
-    
-    checkboxes.forEach(box => {
-      // 画面上の表示番号（#1, #2...）に合わせるため +1 で判定します
-      const currentIdx = parseInt(box.value) + 1;
-      
-      if (currentIdx >= start && currentIdx <= end) {
-        box.checked = true;
-      } else {
-        box.checked = false; // 範囲外のチェックは外す（お好みで維持させたい場合はこの行を削除）
-      }
-    });
-
-    this.updateSelectedCountBadge();
-  },
   selectCount(n, btn) {
     selectedCount = n;
     document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('selected'));
@@ -109,25 +89,47 @@ const UI = {
     document.getElementById('selectedCountBadge').textContent = checkedBoxes.length;
   },
 
-  // チェックされた複数の問題を集めて開始する
-  startSelectedQuestions() {
-    const checkedBoxes = document.querySelectorAll('.q-select-checkbox:checked');
-    if (checkedBoxes.length === 0) {
-      alert('問題が選択されていません。解きたい問題にチェックを入れてください。');
+  // 入力された範囲に基づいてチェックボックスを一括操作する
+  selectRange() {
+    const startInput = document.getElementById('rangeStart').value;
+    const endInput = document.getElementById('rangeEnd').value;
+    
+    const start = parseInt(startInput);
+    const end = parseInt(endInput);
+    
+    if (isNaN(start) || isNaN(end)) {
+      alert('開始番号と終了番号を両方入力してください。');
+      return;
+    }
+    
+    if (start > end) {
+      alert('開始番号は終了番号以下の数値を入力してください。');
       return;
     }
 
-    const doShuffleC = document.getElementById('shuffleC').checked;
-    isTimerActive = document.getElementById('useTimer').checked;
-
-    // チェックされたインデックスの問題だけを集めて出題配列を作る
-    sessionQ = Array.from(checkedBoxes).map(box => allQuestions[parseInt(box.value)]);
+    const checkboxes = document.querySelectorAll('.q-select-checkbox');
     
-    this.setupSession(doShuffleC);
+    checkboxes.forEach(box => {
+      const currentIdx = parseInt(box.value) + 1;
+      if (currentIdx >= start && currentIdx <= end) {
+        box.checked = true;
+      } else {
+        box.checked = false; 
+      }
+    });
+
+    this.updateSelectedCountBadge();
   },
 
   // ─── GAME START ──────────────────────────────────────────
   startQuiz() {
+    const checkedBoxes = document.querySelectorAll('.q-select-checkbox:checked');
+
+    if (checkedBoxes.length > 0) {
+      this.startSelectedQuestions();
+      return;
+    }
+
     const doShuffleQ = document.getElementById('shuffleQ').checked;
     const doShuffleC = document.getElementById('shuffleC').checked;
     isTimerActive = document.getElementById('useTimer').checked;
@@ -136,6 +138,27 @@ const UI = {
     if (doShuffleQ) pool = shuffle(pool);
     sessionQ = pool.slice(0, selectedCount);
 
+    this.setupSession(doShuffleC);
+  },
+
+  startSelectedQuestions() {
+    const checkedBoxes = document.querySelectorAll('.q-select-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+      alert('問題が選択されていません。解きたい問題にチェックを入れてください。');
+      return;
+    }
+
+    const doShuffleQ = document.getElementById('shuffleQ').checked;
+    const doShuffleC = document.getElementById('shuffleC').checked;
+    isTimerActive = document.getElementById('useTimer').checked;
+
+    let chosenPool = Array.from(checkedBoxes).map(box => allQuestions[parseInt(box.value)]);
+    
+    if (doShuffleQ) {
+      chosenPool = shuffle(chosenPool);
+    }
+    
+    sessionQ = chosenPool;
     this.setupSession(doShuffleC);
   },
 
@@ -150,6 +173,9 @@ const UI = {
     answers = new Array(sessionQ.length).fill(null);
     score = 0;
     timerSec = 0;
+
+    // クイズ開始時に解説エリアを確実に隠す
+    document.getElementById('explanation').classList.remove('show');
 
     const timerEl = document.getElementById('timerEl');
     if (isTimerActive) {
@@ -219,10 +245,15 @@ const UI = {
       if (i === chosenDisp && chosenDisp !== correctDisp) btn.classList.add('wrong');
     });
 
+    // 💡 修正：「解説を表示する」のトグル状態をここで直接読み取って判定に利用します
     const showExp = document.getElementById('showExp').checked;
+    const expEl = document.getElementById('explanation');
+    
     if (showExp && explanation) {
       document.getElementById('explanationText').textContent = explanation;
-      document.getElementById('explanation').classList.add('show');
+      expEl.classList.add('show');
+    } else {
+      expEl.classList.remove('show');
     }
 
     const isLast = current === sessionQ.length - 1;
@@ -281,7 +312,6 @@ const UI = {
     if (isAborted) title += '（途中終了）';
     document.getElementById('resultTitle').textContent = title;
 
-    // 1問だけ解いた場合は「同じ設定で再挑戦」を非表示にする（バグ防止）
     document.getElementById('retrySameBtn').style.display = sessionQ.length === 1 ? 'none' : '';
 
     const hasWrong = sessionQ.some((q, i) => !answers[i] || answers[i].origChosen !== q.correct);
@@ -316,7 +346,21 @@ const UI = {
   },
 
   restartSameSettings() {
-    this.startQuiz();
+    const doShuffleQ = document.getElementById('shuffleQ').checked;
+    const doShuffleC = document.getElementById('shuffleC').checked;
+    
+    const checkedBoxes = document.querySelectorAll('.q-select-checkbox:checked');
+    if (checkedBoxes.length > 0) {
+      let chosenPool = Array.from(checkedBoxes).map(box => allQuestions[parseInt(box.value)]);
+      if (doShuffleQ) chosenPool = shuffle(chosenPool);
+      sessionQ = chosenPool;
+    } else {
+      let pool = [...allQuestions];
+      if (doShuffleQ) pool = shuffle(pool);
+      sessionQ = pool.slice(0, selectedCount);
+    }
+    
+    this.setupSession(doShuffleC);
   },
 
   // ─── HELPER ──────────────────────────────────────────────

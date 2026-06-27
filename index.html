@@ -60,7 +60,7 @@
             <small>①②③④の順をランダムにする</small>
           </div>
           <div class="toggle-switch">
-            <input type="checkbox" id="shuffleC" checked>
+            <input type="checkbox" id="shuffleC" checked onchange="UI.handleShuffleCChange()">
             <div class="toggle-track"></div>
           </div>
         </label>
@@ -93,12 +93,13 @@
           <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; margin-left: auto;" onclick="UI.selectRange()">選択</button>
         </div>
 
-        <div class="select-list" id="individualQList"></div>
-        <div style="padding: 12px; border-top: 1px solid var(--border); background: var(--surface2);">
+        <div style="padding: 12px; border-bottom: 1px solid var(--border); background: var(--surface2);">
           <button class="btn btn-primary" style="width: 100%; padding: 10px;" onclick="UI.startSelectedQuestions()">
             選択した問題を解く (計<span id="selectedCountBadge">0</span>問)
           </button>
         </div>
+
+        <div class="select-list" id="individualQList"></div>
       </div>
     </div>
     </div>
