@@ -40,7 +40,7 @@
             <small>タイマーによる時間計測を行います</small>
           </div>
           <div class="toggle-switch">
-            <input type="checkbox" id="useTimer" checked>
+            <input type="checkbox" id="useTimer" >
             <div class="toggle-track"></div>
           </div>
         </label>
@@ -50,7 +50,7 @@
             <small>出題順をランダムにする</small>
           </div>
           <div class="toggle-switch">
-            <input type="checkbox" id="shuffleQ" checked>
+            <input type="checkbox" id="shuffleQ" >
             <div class="toggle-track"></div>
           </div>
         </label>
@@ -60,7 +60,7 @@
             <small>①②③④の順をランダムにする</small>
           </div>
           <div class="toggle-switch">
-            <input type="checkbox" id="shuffleC" checked onchange="UI.handleShuffleCChange()">
+            <input type="checkbox" id="shuffleC"  onchange="UI.handleShuffleCChange()">
             <div class="toggle-track"></div>
           </div>
         </label>
@@ -102,9 +102,12 @@
         <div class="select-list" id="individualQList"></div>
       </div>
     </div>
-    </div>
 
     <button class="btn btn-primary" id="startBtn" onclick="UI.startQuiz()">クイズを開始する →</button>
+    
+    <button class="btn btn-ghost" id="flashcardBtn" style="width: 100%; padding: 14px; font-size: 15px; margin-top: 12px; border: 1px solid var(--border);" onclick="UI.startFlashcards()">
+      🃏 フラッシュカード（暗記モード）を始める
+    </button>
   </div>
 
   <div id="quizScreen" class="screen">
@@ -127,6 +130,55 @@
       <button class="btn btn-ghost" id="backBtn" onclick="UI.goBack()">← 前へ</button>
       <button class="btn btn-primary" id="nextBtn" onclick="UI.goNext()" style="display:none">次へ →</button>
       <button class="btn btn-warn" id="abortBtn" onclick="UI.abortQuiz()" style="margin-left: auto;">途中終了</button>
+    </div>
+  </div>
+
+  <div id="flashcardScreen" class="screen">
+    <div class="quiz-topbar">
+      <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 13px;" onclick="UI.stopAutoCard(); UI.goSetup()">✕ 中断</button>
+      <div class="q-counter">カード <strong id="cardProgress">0 / 0</strong></div>
+      <div style="width: 60px;"></div>
+    </div>
+
+    <div style="max-width: 400px; margin: 10px auto; padding: 12px; background: var(--surface2); border-radius: 12px; border: 1px solid var(--border); font-size: 13px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <span style="font-weight: bold;">🔄 自動めくり（オートモード）</span>
+        <label class="toggle-switch" style="width: 44px; height: 24px;">
+          <input type="checkbox" id="autoCardToggle" onchange="UI.handleAutoCardToggle()">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center; color: var(--text3);">
+        <label style="display: flex; align-items: center; gap: 4px;">
+          表(問題): <input type="number" id="timeFront" value="5" min="1" style="width: 45px; padding: 4px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: #fff; text-align: center;"> 秒
+        </label>
+        <label style="display: flex; align-items: center; gap: 4px;">
+          裏(解答): <input type="number" id="timeBack" value="4" min="1" style="width: 45px; padding: 4px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: #fff; text-align: center;"> 秒
+        </label>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; padding: 12px 0;">
+      <div class="card-flip-container" id="cardFlipContainer" onclick="UI.toggleCardFlip()">
+        <div class="card-inner">
+          <div class="card-front">
+            <div class="card-tag">QUESTION</div>
+            <div class="card-text" id="cardQuestionText">問題文</div>
+            <div class="card-hint">タップで答えを表示</div>
+          </div>
+          <div class="card-back">
+            <div class="card-tag" style="background: #e11d48;">ANSWER</div>
+            <div class="card-text" id="cardAnswerText">正解の選択肢</div>
+            <div class="card-exp" id="cardExpText">ここに解説が入ります</div>
+            <div class="card-hint">タップで問題に戻る</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 16px; width: 100%; max-width: 400px; margin-top: 24px;">
+        <button class="btn btn-ghost" id="cardPrevBtn" style="flex: 1; padding: 12px;" onclick="UI.prevCard()">← 前へ</button>
+        <button class="btn btn-primary" id="cardNextBtn" style="flex: 1; padding: 12px;" onclick="UI.nextCard()">次へ →</button>
+      </div>
     </div>
   </div>
 

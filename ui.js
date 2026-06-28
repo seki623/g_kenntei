@@ -1,6 +1,10 @@
 const UI = {
+  // フラッシュカード用の状態管理変数
+  cardCurrent: 0,
+  cardPool: [],
+  cardTimer: null, // 自動めくり用のタイマー保持
+
   // ─── SETUP SCREEN ───────────────────────────────────────
-  // 選択肢シャッフルの切り替え時に解説のデフォルト状態を連動させる
   handleShuffleCChange() {
     const shuffleC = document.getElementById('shuffleC').checked;
     const showExpInput = document.getElementById('showExp');
@@ -39,7 +43,6 @@ const UI = {
     const defaultN = Math.min(10, total);
     this.selectCount(defaultN, grid.querySelector(`[data-val="${defaultN}"]`) || grid.firstChild);
 
-    // 問題一覧リストの生成
     this.renderIndividualQList();
   },
 
@@ -49,7 +52,6 @@ const UI = {
     if (btn) btn.classList.add('selected');
   },
 
-  // 問題一覧のアコーディオン開閉
   toggleQuestionList() {
     const container = document.getElementById('selectListContainer');
     const arrow = document.getElementById('listArrow');
@@ -61,7 +63,6 @@ const UI = {
     }
   },
 
-  // 問題一覧を生成（複数選択のチェックボックス形式）
   renderIndividualQList() {
     const listArea = document.getElementById('individualQList');
     listArea.innerHTML = '';
@@ -83,13 +84,11 @@ const UI = {
     this.updateSelectedCountBadge();
   },
 
-  // 選択されている問題数をバッジに反映
   updateSelectedCountBadge() {
     const checkedBoxes = document.querySelectorAll('.q-select-checkbox:checked');
     document.getElementById('selectedCountBadge').textContent = checkedBoxes.length;
   },
 
-  // 入力された範囲に基づいてチェックボックスを一括操作する
   selectRange() {
     const startInput = document.getElementById('rangeStart').value;
     const endInput = document.getElementById('rangeEnd').value;
@@ -119,6 +118,136 @@ const UI = {
     });
 
     this.updateSelectedCountBadge();
+  },
+
+  // ─── FLASHCARD MODE ───────────────────────────────────────
+  startFlashcards() {
+    const checkedBoxes = document.querySelectorAll('.q-select-checkbox:checked');
+    const doShuffleQ = document.getElementById('shuffleQ').checked;
+    
+    if (checkedBoxes.length > 0) {
+      this.cardPool = Array.from(checkedBoxes).map(box => allQuestions[parseInt(box.value)]);
+    } else {
+      this.cardPool = allQuestions.slice(0, selectedCount);
+    }
+
+    if (this.cardPool.length === 0) {
+      alert('出題する問題がありません。');
+      return;
+    }
+
+    if (doShuffleQ) {
+      this.cardPool = shuffle(this.cardPool);
+    }
+
+    // トグル等の初期状態リセット
+    document.getElementById('autoCardToggle').checked = false;
+    this.stopAutoCard();
+
+    this.cardCurrent = 0;
+    this.showScreen('flashcardScreen');
+    this.renderCard();
+  },
+
+  renderCard() {
+    const q = this.cardPool[this.cardCurrent];
+    const total = this.cardPool.length;
+
+    document.getElementById('cardFlipContainer').classList.remove('flipped');
+
+    document.getElementById('cardProgress').textContent = `${this.cardCurrent + 1} / ${total}`;
+    document.getElementById('cardQuestionText').textContent = q.question;
+    
+    const correctText = q.choices[q.correct];
+    document.getElementById('cardAnswerText').textContent = `正解: ${correctText}`;
+    document.getElementById('cardExpText').textContent = q.explanation ? q.explanation : '解説は登録されていません。';
+
+    document.getElementById('cardPrevBtn').style.opacity = this.cardCurrent === 0 ? '0.3' : '1';
+    document.getElementById('cardPrevBtn').disabled = this.cardCurrent === 0;
+    
+    const isLast = this.cardCurrent === total - 1;
+    document.getElementById('cardNextBtn').textContent = isLast ? '終了する' : '次へ →';
+
+    // 💡 自動めくりが有効なら、表面のタイマーを開始
+    this.planAutoFlip();
+  },
+
+  toggleCardFlip() {
+    document.getElementById('cardFlipContainer').classList.toggle('flipped');
+  },
+
+  // 自動めくりのトグルが切り替わったときの処理
+  handleAutoCardToggle() {
+    const isAuto = document.getElementById('autoCardToggle').checked;
+    if (isAuto) {
+      this.planAutoFlip();
+    } else {
+      this.stopAutoCard();
+    }
+  },
+
+  // タイマーのスケジュールを組む関数
+  planAutoFlip() {
+    this.stopAutoCard(); // 既存のタイマーを一旦クリア
+    
+    const isAuto = document.getElementById('autoCardToggle').checked;
+    if (!isAuto) return;
+
+    const container = document.getElementById('cardFlipContainer');
+    const isFlipped = container.classList.contains('flipped');
+
+    if (!isFlipped) {
+      // 表面（問題）のとき：設定秒数後に裏返す
+      const secFront = parseFloat(document.getElementById('timeFront').value) || 5;
+      this.cardTimer = setTimeout(() => {
+        container.classList.add('flipped');
+        this.planAutoFlip(); // 裏返ったので、次は裏面のタイマーをセット
+      }, secFront * 1000);
+    } else {
+      // 裏面（答え）のとき：設定秒数後に次のカードへ進む
+      const secBack = parseFloat(document.getElementById('timeBack').value) || 4;
+      this.cardTimer = setTimeout(() => {
+        const isLast = this.cardCurrent === this.cardPool.length - 1;
+        if (isLast) {
+          // 最後なら自動モードを終了して戻る
+          document.getElementById('autoCardToggle').checked = false;
+          this.stopAutoCard();
+          alert('すべてのカードをチェックしました！');
+          this.goSetup();
+        } else {
+          this.cardCurrent++;
+          this.renderCard();
+        }
+      }, secBack * 1000);
+    }
+  },
+
+  // タイマーを止める関数
+  stopAutoCard() {
+    if (this.cardTimer) {
+      clearTimeout(this.cardTimer);
+      this.cardTimer = null;
+    }
+  },
+
+  nextCard() {
+    this.stopAutoCard();
+    if (this.cardCurrent < this.cardPool.length - 1) {
+      this.cardCurrent++;
+      this.renderCard();
+    } else {
+      if (confirm('すべてのカードをチェックしました！一覧画面に戻りますか？')) {
+        this.goSetup();
+      }
+    }
+  },
+
+  prevCard() {
+    this.stopAutoCard();
+    if (this.cardCurrent > 0) {
+      this.cardCurrent--;
+      this.renderCard();
+    }
   },
 
   // ─── GAME START ──────────────────────────────────────────
@@ -174,7 +303,6 @@ const UI = {
     score = 0;
     timerSec = 0;
 
-    // クイズ開始時に解説エリアを確実に隠す
     document.getElementById('explanation').classList.remove('show');
 
     const timerEl = document.getElementById('timerEl');
@@ -245,7 +373,6 @@ const UI = {
       if (i === chosenDisp && chosenDisp !== correctDisp) btn.classList.add('wrong');
     });
 
-    // 💡 修正：「解説を表示する」のトグル状態をここで直接読み取って判定に利用します
     const showExp = document.getElementById('showExp').checked;
     const expEl = document.getElementById('explanation');
     
